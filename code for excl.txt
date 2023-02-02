@@ -1,0 +1,90 @@
+// Validation
+$input = $this->validate([
+'file' => 'uploaded[file]|max_size[file,1024]|ext_in[file,csv],'
+]);
+if (!$input) { // Not valid
+$data['validation'] = $this->validator;
+//echo "waqar";
+//return view('veh/updatecvs',$data); 
+}else{ // Valid
+//echo "sucess";
+if($file = $this->request->getFile('file')) {
+if ($file->isValid() && ! $file->hasMoved()) {
+// Get random file name
+$newName = $file->getRandomName();
+// Store file in public/csvfile/ folder
+$file->move('./public/csvfile', $newName);
+//echo "waqar";
+// Reading file
+$file = fopen("./public/csvfile/".$newName,"r");
+$i = 0;
+$numberOfFields = 28; // Total number of fields
+$importData_arr = array();
+// Initialize $importData_arr Array
+while (($filedata = fgetcsv($file, 1000, ",")) !== FALSE) {
+	//echo "waqar";
+$num = count($filedata);
+// Skip first row & check number of fields
+if($i > 0 && $num == $numberOfFields){ 
+// Key names are the insert table field names - name, email, city, and status
+$importData_arr[$i]['vehicles_id'] = $filedata[0];
+$importData_arr[$i]['po_id'] = $filedata[1];
+$importData_arr[$i]['po_number'] = $filedata[2];
+$importData_arr[$i]['grn'] = $filedata[3];
+$importData_arr[$i]['grn_date'] = $filedata[4];
+$importData_arr[$i]['aging'] = $filedata[5];
+$importData_arr[$i]['gdn'] = $filedata[6];
+$importData_arr[$i]['gdn_date'] = $filedata[7];
+$importData_arr[$i]['remarks'] = $filedata[8];
+$importData_arr[$i]['conversion'] = $filedata[9];
+$importData_arr[$i]['purchaser_name'] = $filedata[10];
+$importData_arr[$i]['brand'] = $filedata[11];
+$importData_arr[$i]['model_line'] = $filedata[12];
+$importData_arr[$i]['model'] = $filedata[13];
+$importData_arr[$i]['variant'] = $filedata[14];
+$importData_arr[$i]['variant_details'] = $filedata[15];
+$importData_arr[$i]['vin'] = $filedata[16];
+$importData_arr[$i]['engine'] = $filedata[17];
+$importData_arr[$i]['model_des'] = $filedata[18];
+$importData_arr[$i]['my'] = $filedata[19];
+$importData_arr[$i]['steering'] = $filedata[20];
+$importData_arr[$i]['seats'] = $filedata[21];
+$importData_arr[$i]['fuel'] = $filedata[22];
+$importData_arr[$i]['gear'] = $filedata[23];
+$importData_arr[$i]['ex_color'] = $filedata[24];
+$importData_arr[$i]['int_color'] = $filedata[25];
+$importData_arr[$i]['upholestry'] = $filedata[26];
+$importData_arr[$i]['max_price'] = $filedata[27];
+}
+$i++;
+}
+fclose($file);
+// Insert data
+$count = 0;
+foreach($importData_arr as $vehicles){
+
+$Vehicles = new Vehicles();
+// Check record
+$checkrecord = $Vehicles->where('po_id',$vehicles['po_id'])->countAllResults();
+if($checkrecord == 0){
+## Insert Record
+if($Vehicles->insert($vehicles)){
+$count++;
+}
+}
+}
+// Set Session
+session()->setFlashdata('message', $count.' Record inserted successfully!');
+session()->setFlashdata('alert-class', 'alert-success');
+}else{
+// Set Session
+session()->setFlashdata('message', 'File not imported.');
+session()->setFlashdata('alert-class', 'alert-danger');
+}
+}else{
+// Set Session
+session()->setFlashdata('message', 'File not imported.');
+session()->setFlashdata('alert-class', 'alert-danger');
+}
+}
+//return redirect()->route('/');
